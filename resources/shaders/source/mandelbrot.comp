@@ -2,12 +2,12 @@
 
 layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 
-layout(set = 0, binding = 0, rgba8) uniform writeonly image2D img;
-
-layout(binding = 1) uniform UniformBufferObject {
+layout(set = 0, binding = 0) uniform UniformBufferObject {
     vec3 camPos;
     float time;
 } ubo;
+
+layout(set = 0, binding = 1, rgba8) uniform writeonly image2D img;
 
 #define MAX_STEPS 100
 #define MAX_DISTANCE 100.

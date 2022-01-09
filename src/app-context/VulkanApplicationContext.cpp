@@ -11,15 +11,13 @@ VulkanApplicationContext::VulkanApplicationContext() {
     pickPhysicalDevice();
     createLogicalDevice();
     createAllocator();
-    createCommandPool(queueFamilyIndices.graphicsFamily.value(), graphicsCommandPool);
-    createCommandPool(queueFamilyIndices.computeFamily.value(), computeCommandPool);
+    createCommandPool();
     initSwapchainImageCount();
 }
 
 VulkanApplicationContext::~VulkanApplicationContext() {
-    vkDestroyCommandPool(device, graphicsCommandPool, nullptr);
-    vkDestroyCommandPool(device, computeCommandPool, nullptr);
-
+    std::cout << "Destroying context" << "\n";
+    vkDestroyCommandPool(device, commandPool, nullptr);
     vmaDestroyAllocator(allocator);
     vkDestroySurfaceKHR(instance, surface, nullptr);
 
@@ -76,9 +74,6 @@ QueueFamilyIndices VulkanApplicationContext::findQueueFamilies(VkPhysicalDevice 
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphicsFamily = i;
         }
-        if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) {
-            indices.computeFamily = i;
-        }
         VkBool32 presentSupport = false;
         // It's likely that graphics and presentation are handled by the same queue family.
         vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
@@ -99,7 +94,7 @@ SwapChainSupportDetails VulkanApplicationContext::querySwapChainSupport(VkPhysic
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
     uint32_t formatCount;
     vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
-    std::cout << "Swap chain supported formats: " << formatCount << std::endl;
+    std::cout << "Swap chain supported formats: " << formatCount << "\n";
 
     if (formatCount != 0) {
         details.formats.resize(formatCount);
@@ -109,7 +104,7 @@ SwapChainSupportDetails VulkanApplicationContext::querySwapChainSupport(VkPhysic
 
     uint32_t presentModeCount;
     vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
-    std::cout << "Swap chain supported present modes: " << presentModeCount << std::endl;
+    std::cout << "Swap chain supported present modes: " << presentModeCount << "\n";
 
     if (presentModeCount != 0) {
         details.presentModes.resize(presentModeCount);
@@ -131,7 +126,7 @@ bool VulkanApplicationContext::checkValidationLayerSupport() {
         for (const auto& layerProperties : availableLayers) {
             if (strcmp(layerName, layerProperties.layerName) == 0) {
                 layerFound = true;
-                std::cout << "Validation layer found: " << layerName << std::endl;
+                std::cout << "Validation layer found: " << layerName << "\n";
                 break;
             }
         }
@@ -256,7 +251,7 @@ void VulkanApplicationContext::pickPhysicalDevice() {
         }
     }
 
-    std::cout << "mssa samples: " << msaaSamples << std::endl;
+    std::cout << "mssa samples: " << msaaSamples << "\n";
 
     if (physicalDevice == VK_NULL_HANDLE) {
         throw std::runtime_error("failed to find a suitable GPU!");
@@ -268,8 +263,7 @@ void VulkanApplicationContext::createLogicalDevice() {
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies =
                         { queueFamilyIndices.graphicsFamily.value(),
-                          queueFamilyIndices.computeFamily.value(),
-                          queueFamilyIndices.presentFamily.value() };
+                            queueFamilyIndices.presentFamily.value() };
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -305,7 +299,6 @@ void VulkanApplicationContext::createLogicalDevice() {
     }
 
     vkGetDeviceQueue(device, queueFamilyIndices.graphicsFamily.value(), 0, &graphicsQueue);
-    vkGetDeviceQueue(device, queueFamilyIndices.computeFamily.value(), 0, &computeQueue);
     vkGetDeviceQueue(device, queueFamilyIndices.presentFamily.value(), 0, &presentQueue);
 }
 
@@ -321,10 +314,10 @@ void VulkanApplicationContext::createAllocator() {
     }
 }
 
-void VulkanApplicationContext::createCommandPool(uint32_t queueFamilyIndex, VkCommandPool& commandPool) {
+void VulkanApplicationContext::createCommandPool() {
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.queueFamilyIndex = queueFamilyIndex;
+    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
     poolInfo.flags = 0; // Optional
     if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create command pool!");

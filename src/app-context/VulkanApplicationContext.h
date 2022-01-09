@@ -2,7 +2,6 @@
 
 #include "../utils/vulkan.h"
 #include "vk_mem_alloc.h"
-#include <unordered_map>
 #include <optional>
 #include <string>
 #include <vector>
@@ -27,10 +26,9 @@ const uint32_t HEIGHT = 600;
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
-    std::optional<uint32_t> computeFamily;
 
     bool isComplete() {
-        return graphicsFamily.has_value() && presentFamily.has_value() && computeFamily.has_value();
+        return graphicsFamily.has_value() && presentFamily.has_value();
     }
 };
 
@@ -50,13 +48,13 @@ class VulkanApplicationContext {
         VkSurfaceKHR surface;
         QueueFamilyIndices queueFamilyIndices;
         VkQueue graphicsQueue;
-        VkQueue computeQueue;
         VkQueue presentQueue;
+        VkCommandPool commandPool;
         VmaAllocator allocator;
         VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+
         uint32_t swapChainImageCount;
-        VkCommandPool graphicsCommandPool;
-        VkCommandPool computeCommandPool;
+        
         VulkanApplicationContext() ;
 
         ~VulkanApplicationContext() ;
@@ -67,6 +65,7 @@ class VulkanApplicationContext {
                                      VkImageTiling tiling, 
                                      VkFormatFeatureFlags features) const;
     private:
+
         void initWindow() ;
 
         void createSurface() ;
@@ -90,10 +89,11 @@ class VulkanApplicationContext {
         void createLogicalDevice();
 
         void createAllocator();
-        
-        void createCommandPool(uint32_t queueFamilyIndex, VkCommandPool &commandPool);
+
+        void createCommandPool();
 
         void initSwapchainImageCount();
+
 };
 
 namespace VulkanGlobal {
